@@ -46,9 +46,7 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          cd deploy
-          chmod +x deploy.sh
-          ./deploy.sh $ResourceGroup
+          az deployment group create --resource-group $ResourceGroup -f deploy.bicep
     - uses: azure/functions-action@d727b851b0c3908f5cd8b93d03424207b8433baa # pin@v1 
       with:
         app-name: ${{ env.ResourceGroup }}

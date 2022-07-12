@@ -2,8 +2,11 @@
 
 See [documentation for free certificates on App Services](https://docs.microsoft.com/azure/app-service/configure-ssl-certificate).
 
-See [documentation for free certificates on Azure CDN](https://docs.microsoft.com/azure/cdn/cdn-custom-ssl).
+~~See [documentation for free certificates on Azure CDN](https://docs.microsoft.com/azure/cdn/cdn-custom-ssl).~~
 
+Microsoft decided to deprecate apex domain certs for CDN (and also CDN seems to be deprecated in favor of frontdoor).
+
+Since frontdoor is a minimum of 35$/month this function still has value.
 
 ______________
 
