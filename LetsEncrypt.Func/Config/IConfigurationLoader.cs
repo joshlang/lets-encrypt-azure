@@ -8,5 +8,5 @@ namespace LetsEncrypt.Func.Config;
 
 public interface IConfigurationLoader
 {
-    Task<IEnumerable<(string configName, Configuration)>> LoadConfigFilesAsync(FunctionContext executionContext, CancellationToken cancellationToken);
+    Task<IEnumerable<(string configName, Configuration)>> LoadConfigFilesAsync(FunctionContext functionContext, CancellationToken cancellationToken);
 }

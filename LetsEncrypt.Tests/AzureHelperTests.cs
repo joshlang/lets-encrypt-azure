@@ -55,7 +55,7 @@ public class AzureHelperTests
             var mock = new MockHttpMessageHandler(req =>
             {
                 var url = req.RequestUri.ToString();
-                if (!url.Contains($"https://management.azure.com/subscriptions/{fakeSubscriptionId}"))
+                if (!url.Contains($"https://management.azure.com/subscriptions/{fakeSubscriptionId}", StringComparison.OrdinalIgnoreCase))
                     throw new NotSupportedException("Invalid request on mock: " + url);
 
                 var resp = new HttpResponseMessage(HttpStatusCode.Unauthorized);

@@ -19,7 +19,7 @@ namespace LetsEncrypt.Tests;
 public class RenewalOptionParserTests
 {
     [Test]
-    public void ParsingChallengeResponderShouldWorkIfCallerHasMsiAccessToStorage()
+    public async Task ParsingChallengeResponderShouldWorkIfCallerHasMsiAccessToStorage()
     {
         var az = new Mock<IAzureHelper>();
         var factory = new Mock<IStorageFactory>();
@@ -44,11 +44,12 @@ public class RenewalOptionParserTests
             log.Object);
 
         var cfg = TestHelper.LoadConfig("config");
-        new Func<Task>(async () => _ = await parser.ParseChallengeResponderAsync(cfg.Certificates[0], CancellationToken.None)).Should().NotThrow();
+
+        await parser.Invoking(p => p.ParseChallengeResponderAsync(cfg.Certificates[0], CancellationToken.None)).Should().NotThrowAsync();
     }
 
     [Test]
-    public void ParsingChallengeResponderShouldFailIfCallerHasNoMsiAccessToStorageAndFallbacksAreNotAvailable()
+    public async void ParsingChallengeResponderShouldFailIfCallerHasNoMsiAccessToStorageAndFallbacksAreNotAvailable()
     {
         var az = new Mock<IAzureHelper>();
         var factory = new Mock<IStorageFactory>();
@@ -83,7 +84,7 @@ public class RenewalOptionParserTests
             log.Object);
 
         var cfg = TestHelper.LoadConfig("config");
-        new Func<Task>(async () => _ = await parser.ParseChallengeResponderAsync(cfg.Certificates[0], CancellationToken.None)).Should().Throw<InvalidOperationException>();
+        await parser.Invoking(p => p.ParseChallengeResponderAsync(cfg.Certificates[0], CancellationToken.None)).Should().ThrowAsync<InvalidOperationException>();
 
         secretClient.Verify(x => x.GetSecretAsync(new StorageProperties().SecretName, null, CancellationToken.None), Times.Once);
     }

@@ -15,5 +15,5 @@ public class Overrides
     /// If set then only certificates that contain at least one of the listed domains are renewed.
     /// This allows the user to force renewal of a subset of certificates if need be.
     /// </summary>
-    public string[] DomainsToUpdate { get; set; } = new string[0];
+    public string[] DomainsToUpdate { get; set; } = System.Array.Empty<string>();
 }

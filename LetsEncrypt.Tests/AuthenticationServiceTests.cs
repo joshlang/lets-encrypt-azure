@@ -31,7 +31,7 @@ public class AuthenticationServiceTests
         var acmeContextMock = new Mock<IAcmeContext>();
         acmeContextMock.SetupGet(x => x.AccountKey)
             .Returns(keyMock.Object);
-        acmeContextMock.Setup(x => x.NewAccount(It.IsAny<IList<string>>(), true))
+        acmeContextMock.Setup(x => x.NewAccount(It.IsAny<IList<string>>(), true, null, null, null))
             .Returns(Task.FromResult((IAccountContext)null));
 
         var factoryMock = acmeContextMock.Object.CreateFactoryMock();
@@ -53,7 +53,7 @@ public class AuthenticationServiceTests
         factoryMock.Verify(x => x.GetContext(options.CertificateAuthorityUri, null));
 
         // extension methods adds mailto to emailbefore calling the actual method
-        acmeContextMock.Verify(x => x.NewAccount(It.Is<IList<string>>(list => list.Count == 1 && list[0] == $"mailto:{options.Email}"), true));
+        acmeContextMock.Verify(x => x.NewAccount(It.Is<IList<string>>(list => list.Count == 1 && list[0] == $"mailto:{options.Email}"), true, null, null, null));
 
         storageMock.Verify(x => x.SetAsync(It.IsAny<string>(), keyInPemFormat, It.IsAny<CancellationToken>()));
     }
@@ -84,7 +84,7 @@ public class AuthenticationServiceTests
         var acmeContextMock = new Mock<IAcmeContext>();
         acmeContextMock.SetupGet(x => x.AccountKey)
             .Returns(keyMock.Object);
-        acmeContextMock.Setup(x => x.NewAccount(It.IsAny<IList<string>>(), true))
+        acmeContextMock.Setup(x => x.NewAccount(It.IsAny<IList<string>>(), true, null, null, null))
             .Returns(Task.FromResult((IAccountContext)null));
 
         var contextFactoryMock = acmeContextMock.Object.CreateFactoryMock();

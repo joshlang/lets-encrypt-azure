@@ -34,14 +34,15 @@ public class IntegrationTests
     [Function("integration-test")]
     public Task RenewAsync(
       [TimerTrigger(Schedule.TwiceDaily)] TimerInfo timer,
-      FunctionContext functionContext,
-      CancellationToken cancellationToken)
-        => CheckDomainsForValidCertificateAsync(functionContext, cancellationToken);
+      FunctionContext functionContext)
+        => CheckDomainsForValidCertificateAsync(functionContext);
 
     private async Task CheckDomainsForValidCertificateAsync(
-        FunctionContext functionContext,
-        CancellationToken cancellationToken)
+        FunctionContext functionContext)
     {
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+        var cancellationToken = cts.Token;
+
         var configurations = await _configurationLoader.LoadConfigFilesAsync(functionContext, cancellationToken);
         var errors = new List<Exception>();
         var httpClient = new HttpClient();

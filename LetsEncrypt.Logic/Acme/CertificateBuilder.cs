@@ -10,8 +10,6 @@ namespace LetsEncrypt.Logic.Acme;
 
 public class CertificateBuilder : ICertificateBuilder
 {
-    private static readonly RNGCryptoServiceProvider _randomGenerator = new RNGCryptoServiceProvider();
-
     public async Task<(byte[] pfxBytes, string password)> BuildCertificateAsync(
         IOrderContext order,
         CertificateRenewalOptions cfg,
@@ -24,8 +22,7 @@ public class CertificateBuilder : ICertificateBuilder
         var builder = certChain.ToPfx(key);
         builder.FullChain = true;
 
-        var bytes = new byte[32];
-        _randomGenerator.GetNonZeroBytes(bytes);
+        var bytes = RandomNumberGenerator.GetBytes(32);
         var password = Convert.ToBase64String(bytes);
         var pfxBytes = builder.Build(string.Join(";", cfg.HostNames), password);
         return (pfxBytes, password);

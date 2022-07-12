@@ -3,7 +3,7 @@
   "Values": {
     // used as the storage provider, container is currently hardcoded to "letsencrypt"
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet"
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
     // fill in your subscription id when running locally (or set environment variable)
     // "SubscriptionId": ""
   },

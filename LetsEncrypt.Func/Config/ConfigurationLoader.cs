@@ -1,5 +1,6 @@
 ﻿using LetsEncrypt.Logic.Config;
 using LetsEncrypt.Logic.Storage;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ public class ConfigurationLoader : IConfigurationLoader
     }
 
     public async Task<IEnumerable<(string configName, Configuration)>> LoadConfigFilesAsync(
-        Microsoft.Azure.WebJobs.ExecutionContext executionContext,
+        FunctionContext functionContext,
         CancellationToken cancellationToken)
 
     {
@@ -51,7 +52,7 @@ public class ConfigurationLoader : IConfigurationLoader
         if (!paths.Any())
         {
             _logger.LogWarning("No config files found. Placing config/sample.json in storage!");
-            string sampleJsonPath = Path.Combine(executionContext.FunctionAppDirectory, "sample.json");
+            string sampleJsonPath = Path.Combine(new FileInfo(functionContext.FunctionDefinition.PathToAssembly).DirectoryName, "sample.json");
             var content = await File.ReadAllTextAsync(sampleJsonPath, cancellationToken);
             await _storageProvider.SetAsync("config/sample.json", content, cancellationToken);
         }

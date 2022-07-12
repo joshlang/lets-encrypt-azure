@@ -35,7 +35,7 @@ Follow the instructions at [Configure azure credentials](https://github.com/mark
 
 The modified pipeline should now execute successfully in your account.
 
-Alternatively you can execute the same steps manually from your machine using Az powershell module and Visual Studio by following each step in the github action manually (in short: build, publish & deploy azure function to the azure infrastructure defined in the [ARM template](../deploy/deploy.json)).
+Alternatively you can execute the same steps manually from your machine using Az powershell module and Visual Studio by following each step in the github action manually (in short: build, publish & deploy azure function to the azure infrastructure defined in the [bicep template](../deploy.bicep)).
 
 ## Configure
 

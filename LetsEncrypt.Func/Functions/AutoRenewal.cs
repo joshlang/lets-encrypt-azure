@@ -2,16 +2,18 @@ using LetsEncrypt.Func.Config;
 using LetsEncrypt.Logic;
 using LetsEncrypt.Logic.Config;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Net.Http;
+using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ExecutionContext = Microsoft.Azure.WebJobs.ExecutionContext;
 
 namespace LetsEncrypt.Func.Functions;
 
@@ -35,35 +37,31 @@ public class AutoRenewal
     /// Wrapper function that allows manual execution via http with optional override parameters.
     /// </summary>
     [Function("execute")]
-    public async Task<IActionResult> ExecuteManuallyAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "POST", Route = "")] HttpRequestMessage req,
-        CancellationToken cancellationToken,
-        ExecutionContext executionContext)
+    public async Task<HttpResponseData> ExecuteManuallyAsync(
+        [HttpTrigger(AuthorizationLevel.Function, "POST", Route = "")] HttpRequestData req,
+        FunctionContext functionContext)
     {
-        var q = req.RequestUri.ParseQueryString();
-        var body = await req.Content.ReadAsStringAsync();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+        var cancellationToken = cts.Token;
+
+        using var reader = new StreamReader(req.Body);
+        var body = await reader.ReadToEndAsync();
         var overrides = JsonConvert.DeserializeObject<Overrides>(body) ?? Overrides.None;
 
-        // keep legacy parameter around until next breaking change is introduced
-        var value = q.GetValues("NewCertificate")?.FirstOrDefault();
-        if (!string.IsNullOrEmpty(value))
-        {
-            _logger.LogWarning("Detected legacy querystring parameter \"newCertificate\" which will be removed in a future version! " +
-                "Please provide the \"forceNewCertificates\" parameter in the body instead. " +
-                "See the changelog for details: https://github.com/MarcStan/lets-encrypt-azure/blob/master/Changelog.md");
-            overrides.ForceNewCertificates = "true".Equals(value, StringComparison.OrdinalIgnoreCase);
-        }
         try
         {
-            await RenewAsync(overrides, executionContext, cancellationToken);
-            return new AcceptedResult();
+            await RenewAsync(overrides, functionContext, cancellationToken);
+            return req.CreateResponse(HttpStatusCode.Accepted);
         }
         catch (Exception)
         {
-            return new BadRequestObjectResult(new
+            var response = req.CreateResponse(HttpStatusCode.BadRequest);
+            using var writer = new StreamWriter(response.Body, Encoding.UTF8, leaveOpen: true);
+            await writer.WriteAsync(JsonConvert.SerializeObject(new
             {
                 message = "Certificate renewal failed, check appinsights for details"
-            });
+            }));
+            return response;
         }
     }
 
@@ -71,16 +69,20 @@ public class AutoRenewal
     /// Time triggered function that reads config files from storage
     /// and renews certificates accordingly if needed.
     /// </summary>
-    [FunctionName("renew")]
-    public Task RenewAsync(
+    [Function("renew")]
+    public async Task RenewAsync(
         [TimerTrigger(Schedule.Daily, RunOnStartup = true)] TimerInfo timer,
-        CancellationToken cancellationToken,
-        ExecutionContext executionContext)
-        => RenewAsync((Overrides)null, executionContext, cancellationToken);
+        FunctionContext functionContext)
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+        var cancellationToken = cts.Token;
+
+        await RenewAsync(null, functionContext, cancellationToken);
+    }
 
     private async Task RenewAsync(
         Overrides overrides,
-        ExecutionContext executionContext,
+        FunctionContext functionContext,
         CancellationToken cancellationToken)
     {
         if (overrides != null && overrides.DomainsToUpdate == null)
@@ -88,7 +90,7 @@ public class AutoRenewal
             // users could pass null parameter
             overrides.DomainsToUpdate = new string[0];
         }
-        var configurations = await _configurationLoader.LoadConfigFilesAsync(executionContext, cancellationToken);
+        var configurations = await _configurationLoader.LoadConfigFilesAsync(functionContext, cancellationToken);
         var stopwatch = new Stopwatch();
         // with lots of certificate renewals this could run into function timeout (10mins)
         // with 30 days to expiry (default setting) this isn't a big problem as next day all unfinished renewals are continued
