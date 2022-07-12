@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace LetsEncrypt.Logic.Providers.CertificateStores
+namespace LetsEncrypt.Logic.Providers.CertificateStores;
+
+public static class ThumbprintHelper
 {
-    public static class ThumbprintHelper
-    {
-        public static string Convert(byte[] thumbprint) => BitConverter.ToString(thumbprint).Replace("-", "");
-    }
+    public static string Convert(byte[] thumbprint) => BitConverter.ToString(thumbprint).Replace("-", "", StringComparison.OrdinalIgnoreCase);
 }

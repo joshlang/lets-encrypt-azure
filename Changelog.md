@@ -2,6 +2,11 @@
 
 Versioning is done by tagging commits on master. See [Versioning considerations](#Versioning-considerations) for details.
 
+# 2.2.0
+
+* Migrated to .Net 6
+* Switched to bicep template
+
 # 2.1.1
 
 * Migrated from deprecated keyvault & storage packages to latest SDKs

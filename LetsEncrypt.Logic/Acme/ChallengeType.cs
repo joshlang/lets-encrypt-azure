@@ -1,9 +1,8 @@
-﻿namespace LetsEncrypt.Logic.Acme
+﻿namespace LetsEncrypt.Logic.Acme;
+
+public enum ChallengeType
 {
-    public enum ChallengeType
-    {
-        Undefined = 0,
-        Http = 1,
-        Dns = 2
-    }
+    Undefined = 0,
+    Http = 1,
+    Dns = 2
 }

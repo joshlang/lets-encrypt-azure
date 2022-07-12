@@ -1,12 +1,12 @@
 ﻿using LetsEncrypt.Logic.Config;
+using Microsoft.Azure.Functions.Worker;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.Func.Config
+namespace LetsEncrypt.Func.Config;
+
+public interface IConfigurationLoader
 {
-    public interface IConfigurationLoader
-    {
-        Task<IEnumerable<(string configName, Configuration)>> LoadConfigFilesAsync(Microsoft.Azure.WebJobs.ExecutionContext executionContext, CancellationToken cancellationToken);
-    }
+    Task<IEnumerable<(string configName, Configuration)>> LoadConfigFilesAsync(FunctionContext executionContext, CancellationToken cancellationToken);
 }

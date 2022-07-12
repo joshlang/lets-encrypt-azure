@@ -1,21 +1,20 @@
 ﻿using System;
 
-namespace LetsEncrypt.Logic.Providers.CertificateStores
+namespace LetsEncrypt.Logic.Providers.CertificateStores;
+
+public interface ICertificate
 {
-    public interface ICertificate
-    {
-        DateTimeOffset? NotBefore { get; }
+    DateTimeOffset? NotBefore { get; }
 
-        DateTimeOffset? Expires { get; }
+    DateTimeOffset? Expires { get; }
 
-        string Name { get; }
+    string Name { get; }
 
-        string[] HostNames { get; }
+    string[] HostNames { get; }
 
-        ICertificateStore Store { get; }
+    ICertificateStore Store { get; }
 
-        string Thumbprint { get; }
+    string Thumbprint { get; }
 
-        string Version { get; }
-    }
+    string Version { get; }
 }

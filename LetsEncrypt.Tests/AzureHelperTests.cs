@@ -11,70 +11,69 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.Tests
+namespace LetsEncrypt.Tests;
+
+public class AzureHelperTests
 {
-    public class AzureHelperTests
+    [Test]
+    public void SubscriptionIdShouldBeReadFromEnvironmentVariable()
     {
-        [Test]
-        public void SubscriptionIdShouldBeReadFromEnvironmentVariable()
+        try
         {
-            try
-            {
-                const string fakeSubscriptionId = "68373267-6C36-4B66-B92F-F124A23E313E";
-                Environment.SetEnvironmentVariable("subscriptionId", fakeSubscriptionId);
-
-                var cred = new Mock<TokenCredential>();
-                var az = new AzureHelper(cred.Object);
-                az.GetSubscriptionId().Should().Be(fakeSubscriptionId);
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("subscriptionId", null);
-            }
-        }
-
-        [Test]
-        public void SubscriptionIdShouldThrowIfNotSet()
-        {
-            Environment.SetEnvironmentVariable("subscriptionId", null);
+            const string fakeSubscriptionId = "68373267-6C36-4B66-B92F-F124A23E313E";
+            Environment.SetEnvironmentVariable("subscriptionId", fakeSubscriptionId);
 
             var cred = new Mock<TokenCredential>();
             var az = new AzureHelper(cred.Object);
-            new Action(() => az.GetSubscriptionId()).Should().Throw<ArgumentException>();
+            az.GetSubscriptionId().Should().Be(fakeSubscriptionId);
         }
-
-        [Test]
-        public async Task TenantIdShouldBeReadFromAzure()
+        finally
         {
-            try
-            {
-                // setup
-                const string fakeSubscriptionId = "68373267-6C36-4B66-B92F-F124A23E313E";
-                const string fakeTenantId = "68373267-6C36-4B66-B92F-000000000000";
-                // mock http request
-                var mock = new MockHttpMessageHandler(req =>
-                {
-                    var url = req.RequestUri.ToString();
-                    if (!url.Contains($"https://management.azure.com/subscriptions/{fakeSubscriptionId}"))
-                        throw new NotSupportedException("Invalid request on mock: " + url);
+            Environment.SetEnvironmentVariable("subscriptionId", null);
+        }
+    }
 
-                    var resp = new HttpResponseMessage(HttpStatusCode.Unauthorized);
-                    resp.Headers.WwwAuthenticate.Add(new AuthenticationHeaderValue("Bearer",
-                        $"authorization_uri=\"https://login.windows.net/{fakeTenantId}\", error=\"invalid_token\", error_description=\"The authentication failed because of missing 'Authorization' header.\""));
-                    return resp;
-                });
-                var cred = new Mock<TokenCredential>();
-                var az = new AzureHelper(cred.Object, mock);
-                Environment.SetEnvironmentVariable("subscriptionId", fakeSubscriptionId);
+    [Test]
+    public void SubscriptionIdShouldThrowIfNotSet()
+    {
+        Environment.SetEnvironmentVariable("subscriptionId", null);
 
-                // act + verify
-                var t = await az.GetTenantIdAsync(CancellationToken.None);
-                t.Should().Be(fakeTenantId);
-            }
-            finally
+        var cred = new Mock<TokenCredential>();
+        var az = new AzureHelper(cred.Object);
+        new Action(() => az.GetSubscriptionId()).Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public async Task TenantIdShouldBeReadFromAzure()
+    {
+        try
+        {
+            // setup
+            const string fakeSubscriptionId = "68373267-6C36-4B66-B92F-F124A23E313E";
+            const string fakeTenantId = "68373267-6C36-4B66-B92F-000000000000";
+            // mock http request
+            var mock = new MockHttpMessageHandler(req =>
             {
-                Environment.SetEnvironmentVariable("subscriptionId", null);
-            }
+                var url = req.RequestUri.ToString();
+                if (!url.Contains($"https://management.azure.com/subscriptions/{fakeSubscriptionId}"))
+                    throw new NotSupportedException("Invalid request on mock: " + url);
+
+                var resp = new HttpResponseMessage(HttpStatusCode.Unauthorized);
+                resp.Headers.WwwAuthenticate.Add(new AuthenticationHeaderValue("Bearer",
+                    $"authorization_uri=\"https://login.windows.net/{fakeTenantId}\", error=\"invalid_token\", error_description=\"The authentication failed because of missing 'Authorization' header.\""));
+                return resp;
+            });
+            var cred = new Mock<TokenCredential>();
+            var az = new AzureHelper(cred.Object, mock);
+            Environment.SetEnvironmentVariable("subscriptionId", fakeSubscriptionId);
+
+            // act + verify
+            var t = await az.GetTenantIdAsync(CancellationToken.None);
+            t.Should().Be(fakeTenantId);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("subscriptionId", null);
         }
     }
 }

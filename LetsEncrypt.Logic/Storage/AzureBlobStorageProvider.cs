@@ -9,92 +9,91 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.Logic.Storage
+namespace LetsEncrypt.Logic.Storage;
+
+public class AzureBlobStorageProvider : IStorageProvider
 {
-    public class AzureBlobStorageProvider : IStorageProvider
+    private BlobContainerClient _blobContainerClient;
+
+    public AzureBlobStorageProvider(
+        string connectionString,
+        string container)
     {
-        private BlobContainerClient _blobContainerClient;
+        _blobContainerClient = new BlobContainerClient(connectionString, container);
+    }
 
-        public AzureBlobStorageProvider(
-            string connectionString,
-            string container)
+    public AzureBlobStorageProvider(TokenCredential msiCredentials, string account, string container)
+    {
+        _blobContainerClient = new BlobContainerClient(new Uri($"https://{account}.blob.core.windows.net/{container}"), msiCredentials);
+    }
+
+    public string Escape(string fileName)
+        => fileName;
+
+    public async Task<bool> ExistsAsync(
+        string fileName,
+        CancellationToken cancellationToken)
+    {
+        var block = await GetBlockBlobAsync(fileName, false, cancellationToken);
+        return await block.ExistsAsync(cancellationToken);
+    }
+
+    public async Task<string[]> ListAsync(string prefix, CancellationToken cancellationToken)
+    {
+        var container = await GetContainerAsync(true, cancellationToken);
+
+        var list = new List<string>();
+        await foreach (var file in container.GetBlobsAsync(prefix: prefix, cancellationToken: cancellationToken))
         {
-            _blobContainerClient = new BlobContainerClient(connectionString, container);
+            list.Add(file.Name);
         }
 
-        public AzureBlobStorageProvider(TokenCredential msiCredentials, string account, string container)
-        {
-            _blobContainerClient = new BlobContainerClient(new Uri($"https://{account}.blob.core.windows.net/{container}"), msiCredentials);
-        }
+        return list.ToArray();
+    }
 
-        public string Escape(string fileName)
-            => fileName;
+    public async Task<string> GetAsync(
+        string fileName,
+        CancellationToken cancellationToken)
+    {
+        var blob = await GetBlockBlobAsync(fileName, false, cancellationToken);
+        var response = await blob.DownloadAsync(cancellationToken: cancellationToken);
+        using (var streamReader = new StreamReader(response.Value.Content))
+            return await streamReader.ReadToEndAsync();
+    }
 
-        public async Task<bool> ExistsAsync(
-            string fileName,
-            CancellationToken cancellationToken)
-        {
-            var block = await GetBlockBlobAsync(fileName, false, cancellationToken);
-            return await block.ExistsAsync(cancellationToken);
-        }
+    public async Task SetAsync(
+        string fileName,
+        string content,
+        CancellationToken cancellationToken)
+    {
+        var blob = await GetBlockBlobAsync(fileName, true, cancellationToken);
+        using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(content)))
+            await blob.UploadAsync(ms, new BlobUploadOptions(), cancellationToken);
+    }
 
-        public async Task<string[]> ListAsync(string prefix, CancellationToken cancellationToken)
-        {
-            var container = await GetContainerAsync(true, cancellationToken);
+    public async Task DeleteAsync(string fileName, CancellationToken cancellationToken)
+    {
+        var blob = await GetBlockBlobAsync(fileName, false, cancellationToken);
+        await blob.DeleteIfExistsAsync();
+    }
 
-            var list = new List<string>();
-            await foreach (var file in container.GetBlobsAsync(prefix: prefix, cancellationToken: cancellationToken))
-            {
-                list.Add(file.Name);
-            }
+    private async Task<BlobContainerClient> GetContainerAsync(
+        bool createContainerIfNotExists,
+        CancellationToken cancellationToken)
+    {
+        if (createContainerIfNotExists)
+            await _blobContainerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken);
 
-            return list.ToArray();
-        }
+        return _blobContainerClient;
+    }
 
-        public async Task<string> GetAsync(
-            string fileName,
-            CancellationToken cancellationToken)
-        {
-            var blob = await GetBlockBlobAsync(fileName, false, cancellationToken);
-            var response = await blob.DownloadAsync(cancellationToken: cancellationToken);
-            using (var streamReader = new StreamReader(response.Value.Content))
-                return await streamReader.ReadToEndAsync();
-        }
+    private async Task<BlockBlobClient> GetBlockBlobAsync(
+        string filePath,
+        bool createContainerIfNotExists,
+        CancellationToken cancellationToken)
+    {
+        var container = await GetContainerAsync(createContainerIfNotExists, cancellationToken);
 
-        public async Task SetAsync(
-            string fileName,
-            string content,
-            CancellationToken cancellationToken)
-        {
-            var blob = await GetBlockBlobAsync(fileName, true, cancellationToken);
-            using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(content)))
-                await blob.UploadAsync(ms, new BlobUploadOptions(), cancellationToken);
-        }
-
-        public async Task DeleteAsync(string fileName, CancellationToken cancellationToken)
-        {
-            var blob = await GetBlockBlobAsync(fileName, false, cancellationToken);
-            await blob.DeleteIfExistsAsync();
-        }
-
-        private async Task<BlobContainerClient> GetContainerAsync(
-            bool createContainerIfNotExists,
-            CancellationToken cancellationToken)
-        {
-            if (createContainerIfNotExists)
-                await _blobContainerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken);
-
-            return _blobContainerClient;
-        }
-
-        private async Task<BlockBlobClient> GetBlockBlobAsync(
-            string filePath,
-            bool createContainerIfNotExists,
-            CancellationToken cancellationToken)
-        {
-            var container = await GetContainerAsync(createContainerIfNotExists, cancellationToken);
-
-            return container.GetBlockBlobClient(filePath);
-        }
+        return container.GetBlockBlobClient(filePath);
     }
 }

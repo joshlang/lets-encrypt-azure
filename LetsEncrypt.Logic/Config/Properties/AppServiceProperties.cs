@@ -1,18 +1,17 @@
-﻿namespace LetsEncrypt.Logic.Config.Properties
+﻿namespace LetsEncrypt.Logic.Config.Properties;
+
+/// <summary>
+/// Properties related to Azure App Service.
+/// </summary>
+public class AppServiceProperties
 {
     /// <summary>
-    /// Properties related to Azure App Service.
+    /// The name of the App Service.
     /// </summary>
-    public class AppServiceProperties
-    {
-        /// <summary>
-        /// The name of the App Service.
-        /// </summary>
-        public string Name { get; set; }
+    public string Name { get; set; }
 
-        /// <summary>
-        /// The resource group of the App Service.
-        /// </summary>
-        public string ResourceGroupName { get; set; }
-    }
+    /// <summary>
+    /// The resource group of the App Service.
+    /// </summary>
+    public string ResourceGroupName { get; set; }
 }

@@ -8,349 +8,348 @@ using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.Tests
+namespace LetsEncrypt.Tests;
+
+public class AppServiceTargetResourceTests
 {
-    public class AppServiceTargetResourceTests
+    [Test]
+    public async Task VerifiyTargetCalls()
     {
-        [Test]
-        public async Task VerifiyTargetCalls()
+        const string tenant = "tenantId";
+        const string subscriptionId = "subscriptionId";
+        const string resourceGroupName = "rg";
+        const string name = "name";
+        var az = new Mock<IAzureHelper>();
+        az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(tenant));
+        az.Setup(x => x.GetSubscriptionId())
+            .Returns(subscriptionId);
+
+        var client = new Mock<IAzureAppServiceClient>();
+        var asp = new AppServiceResponse
         {
-            const string tenant = "tenantId";
-            const string subscriptionId = "subscriptionId";
-            const string resourceGroupName = "rg";
-            const string name = "name";
-            var az = new Mock<IAzureHelper>();
-            az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(tenant));
-            az.Setup(x => x.GetSubscriptionId())
-                .Returns(subscriptionId);
-
-            var client = new Mock<IAzureAppServiceClient>();
-            var asp = new AppServiceResponse
+            Location = "westeurope",
+            ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
+            CustomDomains = new[]
             {
-                Location = "westeurope",
-                ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
-                CustomDomains = new[]
+                new AppServiceCustomDomain
                 {
-                    new AppServiceCustomDomain
-                    {
-                        HostName = "example.com"
-                    },
-                    new AppServiceCustomDomain
-                    {
-                        HostName = "www.example.com"
-                    }
+                    HostName = "example.com"
+                },
+                new AppServiceCustomDomain
+                {
+                    HostName = "www.example.com"
                 }
-            };
-            client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(asp));
-            var store = new Mock<ICertificateStore>();
-            var resource = new AppServiceTargetResoure(
-                client.Object,
-                resourceGroupName,
-                name,
-                new Mock<ILogger<AppServiceTargetResoure>>().Object);
+            }
+        };
+        client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(asp));
+        var store = new Mock<ICertificateStore>();
+        var resource = new AppServiceTargetResoure(
+            client.Object,
+            resourceGroupName,
+            name,
+            new Mock<ILogger<AppServiceTargetResoure>>().Object);
 
-            store.SetupGet(x => x.Type)
-                .Returns("keyVault");
-            var cert = new Mock<ICertificate>();
-            cert.SetupGet(x => x.HostNames)
-                .Returns(new[] { "www.example.com", "example.com" });
-            cert.SetupGet(x => x.Thumbprint)
-                .Returns("THUMBPRINT");
-            cert.SetupGet(x => x.Store)
-                .Returns(store.Object);
-            await resource.UpdateAsync(cert.Object, CancellationToken.None);
+        store.SetupGet(x => x.Type)
+            .Returns("keyVault");
+        var cert = new Mock<ICertificate>();
+        cert.SetupGet(x => x.HostNames)
+            .Returns(new[] { "www.example.com", "example.com" });
+        cert.SetupGet(x => x.Thumbprint)
+            .Returns("THUMBPRINT");
+        cert.SetupGet(x => x.Store)
+            .Returns(store.Object);
+        await resource.UpdateAsync(cert.Object, CancellationToken.None);
 
-            client.Verify(x => x.UploadCertificateAsync(asp, cert.Object, "www.example.com-THUMBPRINT", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "www.example.com", "example.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
+        client.Verify(x => x.UploadCertificateAsync(asp, cert.Object, "www.example.com-THUMBPRINT", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "www.example.com", "example.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
 
-            client.VerifyNoOtherCalls();
-        }
+        client.VerifyNoOtherCalls();
+    }
 
-        [Test]
-        public async Task OldBindingsShouldBeDeletedOnSuccess()
+    [Test]
+    public async Task OldBindingsShouldBeDeletedOnSuccess()
+    {
+        const string tenant = "tenantId";
+        const string subscriptionId = "subscriptionId";
+        const string resourceGroupName = "rg";
+        const string name = "name";
+        var az = new Mock<IAzureHelper>();
+        az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(tenant));
+        az.Setup(x => x.GetSubscriptionId())
+            .Returns(subscriptionId);
+
+        var client = new Mock<IAzureAppServiceClient>();
+        var asp = new AppServiceResponse
         {
-            const string tenant = "tenantId";
-            const string subscriptionId = "subscriptionId";
-            const string resourceGroupName = "rg";
-            const string name = "name";
-            var az = new Mock<IAzureHelper>();
-            az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(tenant));
-            az.Setup(x => x.GetSubscriptionId())
-                .Returns(subscriptionId);
-
-            var client = new Mock<IAzureAppServiceClient>();
-            var asp = new AppServiceResponse
+            Location = "westeurope",
+            ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
+            CustomDomains = new[]
             {
-                Location = "westeurope",
-                ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
-                CustomDomains = new[]
+                new AppServiceCustomDomain
                 {
-                    new AppServiceCustomDomain
-                    {
-                        HostName = "example.com",
-                        Thumbprint = "1337"
-                    },
-                    new AppServiceCustomDomain
-                    {
-                        HostName = "www.example.com",
-                        Thumbprint = "1337"
-                    }
+                    HostName = "example.com",
+                    Thumbprint = "1337"
+                },
+                new AppServiceCustomDomain
+                {
+                    HostName = "www.example.com",
+                    Thumbprint = "1337"
                 }
-            };
-            client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(asp));
+            }
+        };
+        client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(asp));
 
-            client.Setup(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new[]
+        client.Setup(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(new[]
+            {
+                new CertificateResponse
                 {
-                    new CertificateResponse
-                    {
-                        Name = "www.example.com-1337",
-                        Thumbprint = "1337",
-                        HostNames = new[] { "www.example.com", "example.com" }
-                    },
-                    new CertificateResponse
-                    {
-                        Name = "not.relevant-1338",
-                        Thumbprint = "1338",
-                        HostNames = new[] { "anotherdomain.com" }
-                    }
-                }));
-            var store = new Mock<ICertificateStore>();
-            var resource = new AppServiceTargetResoure(
-                client.Object,
-                resourceGroupName,
-                name,
-                new Mock<ILogger<AppServiceTargetResoure>>().Object);
-
-            store.SetupGet(x => x.Type)
-                .Returns("keyVault");
-            store.Setup(x => x.GetCertificateThumbprintsAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new[]
+                    Name = "www.example.com-1337",
+                    Thumbprint = "1337",
+                    HostNames = new[] { "www.example.com", "example.com" }
+                },
+                new CertificateResponse
                 {
-                    "1337",
-                    "1338"
-                }));
-            var cert = new Mock<ICertificate>();
-            cert.SetupGet(x => x.HostNames)
-                .Returns(new[] { "www.example.com", "example.com" });
-            cert.SetupGet(x => x.Thumbprint)
-                .Returns("THUMBPRINT");
-            cert.SetupGet(x => x.Store)
-                .Returns(store.Object);
-            await resource.UpdateAsync(cert.Object, CancellationToken.None);
+                    Name = "not.relevant-1338",
+                    Thumbprint = "1338",
+                    HostNames = new[] { "anotherdomain.com" }
+                }
+            }));
+        var store = new Mock<ICertificateStore>();
+        var resource = new AppServiceTargetResoure(
+            client.Object,
+            resourceGroupName,
+            name,
+            new Mock<ILogger<AppServiceTargetResoure>>().Object);
 
-            client.Verify(x => x.UploadCertificateAsync(asp, cert.Object, "www.example.com-THUMBPRINT", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "www.example.com", "example.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
-            client.Verify(x => x.DeleteCertificateAsync("www.example.com-1337", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
+        store.SetupGet(x => x.Type)
+            .Returns("keyVault");
+        store.Setup(x => x.GetCertificateThumbprintsAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(new[]
+            {
+                "1337",
+                "1338"
+            }));
+        var cert = new Mock<ICertificate>();
+        cert.SetupGet(x => x.HostNames)
+            .Returns(new[] { "www.example.com", "example.com" });
+        cert.SetupGet(x => x.Thumbprint)
+            .Returns("THUMBPRINT");
+        cert.SetupGet(x => x.Store)
+            .Returns(store.Object);
+        await resource.UpdateAsync(cert.Object, CancellationToken.None);
 
-            client.VerifyNoOtherCalls();
-        }
+        client.Verify(x => x.UploadCertificateAsync(asp, cert.Object, "www.example.com-THUMBPRINT", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "www.example.com", "example.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
+        client.Verify(x => x.DeleteCertificateAsync("www.example.com-1337", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
 
-        // regression https://github.com/MarcStan/lets-encrypt-azure/issues/7
-        [Test]
-        public async Task ShouldNotDeleteUnrelatedCertificateBindingsOnSuccess()
+        client.VerifyNoOtherCalls();
+    }
+
+    // regression https://github.com/MarcStan/lets-encrypt-azure/issues/7
+    [Test]
+    public async Task ShouldNotDeleteUnrelatedCertificateBindingsOnSuccess()
+    {
+        const string tenant = "tenantId";
+        const string subscriptionId = "subscriptionId";
+        const string resourceGroupName = "rg";
+        const string name = "name";
+        var az = new Mock<IAzureHelper>();
+        az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(tenant));
+        az.Setup(x => x.GetSubscriptionId())
+            .Returns(subscriptionId);
+
+        var client = new Mock<IAzureAppServiceClient>();
+        var asp = new AppServiceResponse
         {
-            const string tenant = "tenantId";
-            const string subscriptionId = "subscriptionId";
-            const string resourceGroupName = "rg";
-            const string name = "name";
-            var az = new Mock<IAzureHelper>();
-            az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(tenant));
-            az.Setup(x => x.GetSubscriptionId())
-                .Returns(subscriptionId);
-
-            var client = new Mock<IAzureAppServiceClient>();
-            var asp = new AppServiceResponse
+            Location = "westeurope",
+            ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
+            CustomDomains = new[]
             {
-                Location = "westeurope",
-                ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
-                CustomDomains = new[]
+                new AppServiceCustomDomain
                 {
-                    new AppServiceCustomDomain
-                    {
-                        HostName = "abc.mydomain.com",
-                        Thumbprint = "old-THUMB"
-                    }
+                    HostName = "abc.mydomain.com",
+                    Thumbprint = "old-THUMB"
                 }
-            };
-            client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(asp));
+            }
+        };
+        client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(asp));
 
-            client.Setup(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new[]
+        client.Setup(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(new[]
+            {
+                // should be deleted; old of current domain
+                new CertificateResponse
                 {
-                    // should be deleted; old of current domain
-                    new CertificateResponse
-                    {
-                        Name = "abc.mydomain.com-old-THUMB",
-                        Thumbprint = "old-THUMB",
-                        HostNames = new[] { "abc.mydomain.com" }
-                    },
-                    // should be kept; thumbprint matches but has different domains assigned as well
-                    new CertificateResponse
-                    {
-                        Name = "abc.mydomain.com-old-THUMB",
-                        Thumbprint = "old-THUMB",
-                        HostNames = new[] { "abc.mydomain.com", "foo.mydomain.com" }
-                    },
-                    // should be kept; totally different domain
-                    new CertificateResponse
-                    {
-                        Name = "mydomain.com-1337",
-                        Thumbprint = "1337",
-                        HostNames = new[] { "*.mydomain.com", "mydomain.com" }
-                    },
-                    // should be kept; totally different domain
-                    new CertificateResponse
-                    {
-                        Name = "mydomain.com-42",
-                        Thumbprint = "42",
-                        HostNames = new[] { "www.mydomain.com", "mydomain.com" }
-                    }
-                }));
-            var store = new Mock<ICertificateStore>();
-            store.Setup(x => x.GetCertificateThumbprintsAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new[]
+                    Name = "abc.mydomain.com-old-THUMB",
+                    Thumbprint = "old-THUMB",
+                    HostNames = new[] { "abc.mydomain.com" }
+                },
+                // should be kept; thumbprint matches but has different domains assigned as well
+                new CertificateResponse
                 {
-                    "old-THUMB",
-                    // in unlikely event that thumbprint match those of other domains we still also check domain name
-                    "42"
-                }));
-            var resource = new AppServiceTargetResoure(
-                client.Object,
-                resourceGroupName,
-                name,
-                new Mock<ILogger<AppServiceTargetResoure>>().Object);
+                    Name = "abc.mydomain.com-old-THUMB",
+                    Thumbprint = "old-THUMB",
+                    HostNames = new[] { "abc.mydomain.com", "foo.mydomain.com" }
+                },
+                // should be kept; totally different domain
+                new CertificateResponse
+                {
+                    Name = "mydomain.com-1337",
+                    Thumbprint = "1337",
+                    HostNames = new[] { "*.mydomain.com", "mydomain.com" }
+                },
+                // should be kept; totally different domain
+                new CertificateResponse
+                {
+                    Name = "mydomain.com-42",
+                    Thumbprint = "42",
+                    HostNames = new[] { "www.mydomain.com", "mydomain.com" }
+                }
+            }));
+        var store = new Mock<ICertificateStore>();
+        store.Setup(x => x.GetCertificateThumbprintsAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(new[]
+            {
+                "old-THUMB",
+                // in unlikely event that thumbprint match those of other domains we still also check domain name
+                "42"
+            }));
+        var resource = new AppServiceTargetResoure(
+            client.Object,
+            resourceGroupName,
+            name,
+            new Mock<ILogger<AppServiceTargetResoure>>().Object);
 
-            store.SetupGet(x => x.Type)
-                .Returns("keyVault");
-            var cert = new Mock<ICertificate>();
-            cert.SetupGet(x => x.HostNames)
-                .Returns(new[] { "abc.mydomain.com" });
-            cert.SetupGet(x => x.Thumbprint)
-                .Returns("THUMBPRINT");
-            cert.SetupGet(x => x.Store)
-                .Returns(store.Object);
-            await resource.UpdateAsync(cert.Object, CancellationToken.None);
+        store.SetupGet(x => x.Type)
+            .Returns("keyVault");
+        var cert = new Mock<ICertificate>();
+        cert.SetupGet(x => x.HostNames)
+            .Returns(new[] { "abc.mydomain.com" });
+        cert.SetupGet(x => x.Thumbprint)
+            .Returns("THUMBPRINT");
+        cert.SetupGet(x => x.Store)
+            .Returns(store.Object);
+        await resource.UpdateAsync(cert.Object, CancellationToken.None);
 
-            client.Verify(x => x.UploadCertificateAsync(asp, cert.Object, "abc.mydomain.com-THUMBPRINT", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "abc.mydomain.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
-            client.Verify(x => x.DeleteCertificateAsync("abc.mydomain.com-old-THUMB", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.UploadCertificateAsync(asp, cert.Object, "abc.mydomain.com-THUMBPRINT", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "abc.mydomain.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
+        client.Verify(x => x.DeleteCertificateAsync("abc.mydomain.com-old-THUMB", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
 
-            client.VerifyNoOtherCalls();
-        }
+        client.VerifyNoOtherCalls();
+    }
 
-        [Test]
-        public async Task ShouldNotFailIfCertIsAlreadyUploadedToResourcegroupButNotYetAssigned()
+    [Test]
+    public async Task ShouldNotFailIfCertIsAlreadyUploadedToResourcegroupButNotYetAssigned()
+    {
+        const string tenant = "tenantId";
+        const string subscriptionId = "subscriptionId";
+        const string resourceGroupName = "rg";
+        const string name = "name";
+        var az = new Mock<IAzureHelper>();
+        az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(tenant));
+        az.Setup(x => x.GetSubscriptionId())
+            .Returns(subscriptionId);
+
+        var client = new Mock<IAzureAppServiceClient>();
+        var asp = new AppServiceResponse
         {
-            const string tenant = "tenantId";
-            const string subscriptionId = "subscriptionId";
-            const string resourceGroupName = "rg";
-            const string name = "name";
-            var az = new Mock<IAzureHelper>();
-            az.Setup(x => x.GetTenantIdAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(tenant));
-            az.Setup(x => x.GetSubscriptionId())
-                .Returns(subscriptionId);
-
-            var client = new Mock<IAzureAppServiceClient>();
-            var asp = new AppServiceResponse
+            Location = "westeurope",
+            ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
+            CustomDomains = new[]
             {
-                Location = "westeurope",
-                ServerFarmId = $"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/",
-                CustomDomains = new[]
+                new AppServiceCustomDomain
                 {
-                    new AppServiceCustomDomain
-                    {
-                        HostName = "abc.mydomain.com",
-                        Thumbprint = "old-THUMB"
-                    }
+                    HostName = "abc.mydomain.com",
+                    Thumbprint = "old-THUMB"
                 }
-            };
-            client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(asp));
+            }
+        };
+        client.Setup(x => x.GetAppServicePropertiesAsync(resourceGroupName, name, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(asp));
 
-            client.Setup(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new[]
+        client.Setup(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(new[]
+            {
+                // correct cert is already in keyvault and uploaded into resourcegroup (this simulates behaviour if failure on assignment occured)
+                new CertificateResponse
                 {
-                    // correct cert is already in keyvault and uploaded into resourcegroup (this simulates behaviour if failure on assignment occured)
-                    new CertificateResponse
-                    {
-                        Name = "abc.mydomain.com-THUMBPRINT",
-                        Thumbprint = "THUMBPRINT",
-                        HostNames = new[] { "abc.mydomain.com" }
-                    },
-                    // should be deleted; old of current domain
-                    new CertificateResponse
-                    {
-                        Name = "abc.mydomain.com-old-THUMB",
-                        Thumbprint = "old-THUMB",
-                        HostNames = new[] { "abc.mydomain.com" }
-                    },
-                    // should be kept; thumbprint matches but has different domains assigned as well
-                    new CertificateResponse
-                    {
-                        Name = "abc.mydomain.com-old-THUMB",
-                        Thumbprint = "old-THUMB",
-                        HostNames = new[] { "abc.mydomain.com", "foo.mydomain.com" }
-                    },
-                    // should be kept; totally different domain
-                    new CertificateResponse
-                    {
-                        Name = "mydomain.com-1337",
-                        Thumbprint = "1337",
-                        HostNames = new[] { "*.mydomain.com", "mydomain.com" }
-                    },
-                    // should be kept; totally different domain
-                    new CertificateResponse
-                    {
-                        Name = "mydomain.com-42",
-                        Thumbprint = "42",
-                        HostNames = new[] { "www.mydomain.com", "mydomain.com" }
-                    }
-                }));
-            var store = new Mock<ICertificateStore>();
-            store.Setup(x => x.GetCertificateThumbprintsAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new[]
+                    Name = "abc.mydomain.com-THUMBPRINT",
+                    Thumbprint = "THUMBPRINT",
+                    HostNames = new[] { "abc.mydomain.com" }
+                },
+                // should be deleted; old of current domain
+                new CertificateResponse
                 {
-                    "old-THUMB",
-                    // in unlikely event that thumbprint match those of other domains we still also check domain name
-                    "42"
-                }));
-            var resource = new AppServiceTargetResoure(
-                client.Object,
-                resourceGroupName,
-                name,
-                new Mock<ILogger<AppServiceTargetResoure>>().Object);
+                    Name = "abc.mydomain.com-old-THUMB",
+                    Thumbprint = "old-THUMB",
+                    HostNames = new[] { "abc.mydomain.com" }
+                },
+                // should be kept; thumbprint matches but has different domains assigned as well
+                new CertificateResponse
+                {
+                    Name = "abc.mydomain.com-old-THUMB",
+                    Thumbprint = "old-THUMB",
+                    HostNames = new[] { "abc.mydomain.com", "foo.mydomain.com" }
+                },
+                // should be kept; totally different domain
+                new CertificateResponse
+                {
+                    Name = "mydomain.com-1337",
+                    Thumbprint = "1337",
+                    HostNames = new[] { "*.mydomain.com", "mydomain.com" }
+                },
+                // should be kept; totally different domain
+                new CertificateResponse
+                {
+                    Name = "mydomain.com-42",
+                    Thumbprint = "42",
+                    HostNames = new[] { "www.mydomain.com", "mydomain.com" }
+                }
+            }));
+        var store = new Mock<ICertificateStore>();
+        store.Setup(x => x.GetCertificateThumbprintsAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.FromResult(new[]
+            {
+                "old-THUMB",
+                // in unlikely event that thumbprint match those of other domains we still also check domain name
+                "42"
+            }));
+        var resource = new AppServiceTargetResoure(
+            client.Object,
+            resourceGroupName,
+            name,
+            new Mock<ILogger<AppServiceTargetResoure>>().Object);
 
-            store.SetupGet(x => x.Type)
-                .Returns("keyVault");
-            var cert = new Mock<ICertificate>();
-            cert.SetupGet(x => x.HostNames)
-                .Returns(new[] { "abc.mydomain.com" });
-            cert.SetupGet(x => x.Thumbprint)
-                .Returns("THUMBPRINT");
-            cert.SetupGet(x => x.Store)
-                .Returns(store.Object);
-            await resource.UpdateAsync(cert.Object, CancellationToken.None);
+        store.SetupGet(x => x.Type)
+            .Returns("keyVault");
+        var cert = new Mock<ICertificate>();
+        cert.SetupGet(x => x.HostNames)
+            .Returns(new[] { "abc.mydomain.com" });
+        cert.SetupGet(x => x.Thumbprint)
+            .Returns("THUMBPRINT");
+        cert.SetupGet(x => x.Store)
+            .Returns(store.Object);
+        await resource.UpdateAsync(cert.Object, CancellationToken.None);
 
-            client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "abc.mydomain.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
-            client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
-            client.Verify(x => x.DeleteCertificateAsync("abc.mydomain.com-old-THUMB", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.GetAppServicePropertiesAsync(resourceGroupName, "name", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.AssignDomainBindingsAsync(resourceGroupName, "name", new[] { "abc.mydomain.com" }, cert.Object, "westeurope", It.IsAny<CancellationToken>()), Times.Once);
+        client.Verify(x => x.ListCertificatesAsync(resourceGroupName, It.IsAny<CancellationToken>()), Times.Exactly(2), "lists once for checking if cert is already uploaded and once for deletion");
+        client.Verify(x => x.DeleteCertificateAsync("abc.mydomain.com-old-THUMB", resourceGroupName, It.IsAny<CancellationToken>()), Times.Once);
 
-            client.VerifyNoOtherCalls();
-        }
+        client.VerifyNoOtherCalls();
     }
 }

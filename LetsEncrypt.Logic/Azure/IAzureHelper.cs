@@ -2,14 +2,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.Logic.Azure
+namespace LetsEncrypt.Logic.Azure;
+
+public interface IAzureHelper
 {
-    public interface IAzureHelper
-    {
-        string GetSubscriptionId();
+    string GetSubscriptionId();
 
-        Task<string> GetTenantIdAsync(CancellationToken cancellationToken);
+    Task<string> GetTenantIdAsync(CancellationToken cancellationToken);
 
-        Task<HttpClient> GetAuthenticatedARMClientAsync(CancellationToken cancellationToken);
-    }
+    Task<HttpClient> GetAuthenticatedARMClientAsync(CancellationToken cancellationToken);
 }

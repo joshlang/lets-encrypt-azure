@@ -1,13 +1,12 @@
 ﻿using Certes;
 using System;
 
-namespace LetsEncrypt.Logic.Acme
+namespace LetsEncrypt.Logic.Acme;
+
+public class AcmeContextFactory : IAcmeContextFactory
 {
-    public class AcmeContextFactory : IAcmeContextFactory
+    public IAcmeContext GetContext(Uri certificateAuthorityUri, IKey existingKey = null)
     {
-        public IAcmeContext GetContext(Uri certificateAuthorityUri, IKey existingKey = null)
-        {
-            return new AcmeContext(certificateAuthorityUri, existingKey);
-        }
+        return new AcmeContext(certificateAuthorityUri, existingKey);
     }
 }
