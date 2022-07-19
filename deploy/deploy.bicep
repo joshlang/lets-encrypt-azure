@@ -1,6 +1,6 @@
 param name string = resourceGroup().name
 param location string = 'canadaeast'
-var storageAccountSuffix = 'storageyay1234'
+var storageAccountSuffix = 'a1b2'
 var storageAccountName = '${toLower(replace(name, '-', ''))}${storageAccountSuffix}'
 var appInsightsTier = 'PerGB2018' // 'Free' not supported by subscription
 
