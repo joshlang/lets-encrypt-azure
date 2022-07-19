@@ -66,7 +66,7 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2018-02-01' = {
 }
 
 resource functionApp 'Microsoft.Web/sites@2018-11-01' = {
-  name: '${name}functionapp'
+  name: name
   location: location
   kind: 'functionapp,linux'
   identity: {
