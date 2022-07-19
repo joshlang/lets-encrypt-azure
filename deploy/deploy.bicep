@@ -1,11 +1,11 @@
 param name string = resourceGroup().name
-param location string = resourceGroup().location
+param location string = 'canadaeast'
 var storageAccountSuffix = 'storageyay1234'
 var storageAccountName = '${toLower(replace(name, '-', ''))}${storageAccountSuffix}'
 
 resource appInsights 'microsoft.insights/components@2020-02-02-preview' = {
   kind: 'other'
-  name: name
+  name: '${name}-insights'
   location: location
   tags: {}
   properties: {
