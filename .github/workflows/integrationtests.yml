@@ -10,7 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # pin@v2 
+    - uses: actions/checkout@7884fcad6b5d53d10323aee724dc68d8b9096a2e # pin@v2 
     - name: Login via Azure CLI
       uses: azure/login@v1
       with:

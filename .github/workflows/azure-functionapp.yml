@@ -10,8 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # pin@v2 
-    - uses: actions/setup-dotnet@51f68377c181a79065c61bd492bd49be4575c439 # pin@v1 
+    - uses: actions/checkout@7884fcad6b5d53d10323aee724dc68d8b9096a2e # pin@v2 
+    - uses: actions/setup-dotnet@c0d4ad69d8bd405d234f1c9166d383b7a4f69ed8 # pin@v2 
     - name: build
       run: dotnet build -c Release
     - name: test
@@ -48,7 +48,7 @@ jobs:
         inlineScript: |
           cd deploy
           az deployment group create --resource-group $ResourceGroup -f deploy.bicep
-    - uses: azure/functions-action@d727b851b0c3908f5cd8b93d03424207b8433baa # pin@v1 
+    - uses: azure/functions-action@a5745d20de8e03c1d0a2a44a79a670d22989e04f # pin@v1 
       with:
         app-name: ${{ env.ResourceGroup }}
         package: functionapp
