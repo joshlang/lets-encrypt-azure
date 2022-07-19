@@ -19,7 +19,7 @@ resource appInsights 'microsoft.insights/components@2020-02-02-preview' = {
   location: location
   tags: {}
   properties: {
-    Application_Type: 'web',
+    Application_Type: 'web'
     WorkspaceResourceId: logAnalytics.id
   }
   dependsOn: [logAnalytics]
