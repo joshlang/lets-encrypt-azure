@@ -2,6 +2,7 @@ param name string = resourceGroup().name
 param location string = 'canadaeast'
 var storageAccountSuffix = 'storageyay1234'
 var storageAccountName = '${toLower(replace(name, '-', ''))}${storageAccountSuffix}'
+var appInsightsTier = 'PerGB2018' // 'Free' not supported by subscription
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = {
   name: '${name}-logs'
@@ -9,7 +10,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-previ
   tags: {}
   properties: {
     features: {}
-    sku: { name: 'Free' }
+    sku: { name: appInsightsTier }
   }
 }
 
@@ -22,7 +23,7 @@ resource appInsights 'microsoft.insights/components@2020-02-02-preview' = {
     Application_Type: 'web'
     WorkspaceResourceId: logAnalytics.id
   }
-  dependsOn: [logAnalytics]
+  dependsOn: []
 }
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2018-07-01' = {
