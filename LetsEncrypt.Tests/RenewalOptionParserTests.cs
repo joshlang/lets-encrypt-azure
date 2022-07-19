@@ -49,7 +49,7 @@ public class RenewalOptionParserTests
     }
 
     [Test]
-    public async void ParsingChallengeResponderShouldFailIfCallerHasNoMsiAccessToStorageAndFallbacksAreNotAvailable()
+    public async Task ParsingChallengeResponderShouldFailIfCallerHasNoMsiAccessToStorageAndFallbacksAreNotAvailable()
     {
         var az = new Mock<IAzureHelper>();
         var factory = new Mock<IStorageFactory>();
