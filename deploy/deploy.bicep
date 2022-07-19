@@ -1,6 +1,6 @@
 param name string = resourceGroup().name
 param location string = resourceGroup().location
-var storageAccountName = toLower(replace(name, '-', ''))
+var storageAccountName = toLower(replace(name, '-', 'storage-yay'))
 
 resource appInsights 'microsoft.insights/components@2020-02-02-preview' = {
   kind: 'other'
