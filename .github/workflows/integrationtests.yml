@@ -20,5 +20,4 @@ jobs:
       with:
         inlineScript: |
           cd internal/deploy
-          chmod +x deploy.sh
-          ./deploy.sh $ResourceGroup
+          az deployment group create --resource-group $ResourceGroup -f integration.json
