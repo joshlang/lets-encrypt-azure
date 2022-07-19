@@ -3,13 +3,24 @@ param location string = 'canadaeast'
 var storageAccountSuffix = 'storageyay1234'
 var storageAccountName = '${toLower(replace(name, '-', ''))}${storageAccountSuffix}'
 
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = {
+  name: '${name}-logs'
+  location: location
+  tags: {}
+  properties: {
+    features: {}
+    sku: { name: 'Free' }
+  }
+}
+
 resource appInsights 'microsoft.insights/components@2020-02-02-preview' = {
   kind: 'other'
   name: '${name}-insights'
   location: location
   tags: {}
   properties: {
-    Application_Type: 'web'
+    Application_Type: 'web',
+    WorkspaceResourceId: logAnalytics.id
   }
   dependsOn: []
 }
