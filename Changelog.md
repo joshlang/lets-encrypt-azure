@@ -2,6 +2,11 @@
 
 Versioning is done by tagging commits on master. See [Versioning considerations](#Versioning-considerations) for details.
 
+# 2.2.1
+
+* Fix github pipeline
+* Fixed test compile error [PR#22](https://github.com/MarcStan/lets-encrypt-azure/pull/22)
+
 # 2.2.0
 
 * Migrated to .Net 6

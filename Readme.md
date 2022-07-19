@@ -6,7 +6,7 @@ See [documentation for free certificates on App Services](https://docs.microsoft
 
 Microsoft decided to deprecate apex domain certs for CDN (and also CDN seems to be deprecated in favor of frontdoor).
 
-Since frontdoor is a minimum of 35$/month this function still has value.
+Since frontdoor is a minimum of 35$/month this function still has value. Although cheaper/free alternatives like [github pages](https://pages.github.com/), [netlify](https://www.netlify.com/) and [vercel](https://vercel.com/) exist.
 
 ______________
 
