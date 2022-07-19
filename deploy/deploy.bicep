@@ -22,7 +22,7 @@ resource appInsights 'microsoft.insights/components@2020-02-02-preview' = {
     Application_Type: 'web',
     WorkspaceResourceId: logAnalytics.id
   }
-  dependsOn: []
+  dependsOn: [logAnalytics]
 }
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2018-07-01' = {
