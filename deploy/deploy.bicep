@@ -53,7 +53,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2018-07-01' = {
 }
 
 resource hostingPlan 'Microsoft.Web/serverfarms@2018-02-01' = {
-  name: name
+  name: '${name}-hosting'
   location: location
   sku: {
     name: 'Y1'
@@ -66,7 +66,7 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2018-02-01' = {
 }
 
 resource functionApp 'Microsoft.Web/sites@2018-11-01' = {
-  name: name
+  name: '${name}functionapp'
   location: location
   kind: 'functionapp,linux'
   identity: {
